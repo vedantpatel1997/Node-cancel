@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Progress with SignalR</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background-color: #ddd;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        .progress {
+            height: 100%;
+            width: 0;
+            background-color: #4caf50;
+            border-radius: 5px;
+            text-align: center;
+            color: white;
+            line-height: 30px;
+            font-weight: bold;
+        }
+        #progressText {
+            margin-top: 20px;
+            font-size: 18px;
+            color: #555;
+        }
+        button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            background-color: #4caf50;
+            color: white;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Long Running Operation</h1>
+        <button id="startBtn">Start Operation</button>
+        <div class="progress-bar">
+            <div id="progress" class="progress">0%</div>
+        </div>
+        <div id="progressText">Waiting for operation to start...</div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.1/socket.io.min.js"></script>
+    <script>
+        // Connect to SignalR hub
+        const socket = io("http://localhost:5000"); // Replace with your SignalR hub URL
+
+        // Button to start the long-running operation
+        const startBtn = document.getElementById("startBtn");
+        const progressBar = document.getElementById("progress");
+        const progressText = document.getElementById("progressText");
+
+        // Start the operation when the button is clicked
+        startBtn.addEventListener("click", () => {
+            startBtn.disabled = true;
+            progressText.innerText = "Operation started...";
+
+            // Send a message to the server to start the long-running operation
+            socket.emit("startLongRunningOperation");
+        });
+
+        // Listen for progress updates from the server
+        socket.on("receiveProgressUpdate", (message) => {
+            const percentageMatch = message.match(/(\d+)%/);
+            if (percentageMatch) {
+                const percentage = percentageMatch[1];
+                progressBar.style.width = `${percentage}%`;
+                progressText.innerText = message;
+            } else {
+                progressText.innerText = message;
+            }
+        });
+
+        // Listen for when the operation is complete
+        socket.on("operationComplete", (message) => {
+            progressText.innerText = message;
+            startBtn.disabled = false;
+            progressBar.style.width = "100%";
+        });
+    </script>
+</body>
+</html>
